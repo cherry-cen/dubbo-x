@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 @EnableDubbo(scanBasePackages = {"org.apache.dubbo.springboot.demo.provider"})
 public class ProviderApplication {
     public static void main(String[] args) throws Exception {
+        // 20231107源码工程导入成功，开始看源码
         SpringApplication.run(ProviderApplication.class, args);
         System.out.println("dubbo service started");
         new CountDownLatch(1).await();
