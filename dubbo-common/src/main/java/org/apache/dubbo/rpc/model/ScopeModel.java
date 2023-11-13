@@ -79,6 +79,9 @@ public abstract class ScopeModel implements ExtensionAccessor {
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final boolean internalScope;
 
+    /**
+     * 应用级模型初始化锁
+     */
     protected final Object instLock = new Object();
 
     protected ScopeModel(ScopeModel parent, ExtensionScope scope, boolean isInternal) {

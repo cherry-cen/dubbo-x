@@ -28,9 +28,8 @@ import org.apache.dubbo.rpc.service.GenericService;
 
 public class Application {
 
+    // 和生产者链接同一个注册中心
     private static final String REGISTRY_URL = "zookeeper://127.0.0.1:2181";
-
-
 
     public static void main(String[] args) {
             runWithBootstrap();

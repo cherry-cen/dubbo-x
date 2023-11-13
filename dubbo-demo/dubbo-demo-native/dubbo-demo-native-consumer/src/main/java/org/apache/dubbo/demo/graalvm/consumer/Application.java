@@ -34,6 +34,7 @@ public class Application {
 
 
     public static void main(String[] args) {
+        // TODO 没搞明白环境变量如何使用
         System.setProperty("dubbo.application.logger", "log4j");
         System.setProperty("native", "true");
         System.setProperty("dubbo.json-framework.prefer", "fastjson");

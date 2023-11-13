@@ -28,22 +28,8 @@ import org.apache.dubbo.common.lang.Prioritized;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.resource.Disposable;
-import org.apache.dubbo.common.utils.ArrayUtils;
-import org.apache.dubbo.common.utils.ClassLoaderResourceLoader;
-import org.apache.dubbo.common.utils.ClassUtils;
-import org.apache.dubbo.common.utils.CollectionUtils;
-import org.apache.dubbo.common.utils.ConcurrentHashSet;
-import org.apache.dubbo.common.utils.ConfigUtils;
-import org.apache.dubbo.common.utils.Holder;
-import org.apache.dubbo.common.utils.NativeUtils;
-import org.apache.dubbo.common.utils.ReflectUtils;
-import org.apache.dubbo.common.utils.StringUtils;
-import org.apache.dubbo.rpc.model.ApplicationModel;
-import org.apache.dubbo.rpc.model.FrameworkModel;
-import org.apache.dubbo.rpc.model.ModuleModel;
-import org.apache.dubbo.rpc.model.ScopeModel;
-import org.apache.dubbo.rpc.model.ScopeModelAccessor;
-import org.apache.dubbo.rpc.model.ScopeModelAware;
+import org.apache.dubbo.common.utils.*;
+import org.apache.dubbo.rpc.model.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -55,23 +41,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,9 +51,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.ServiceLoader.load;
 import static java.util.stream.StreamSupport.stream;
-import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATTERN;
-import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.REMOVE_VALUE_PREFIX;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_ERROR_LOAD_EXTENSION;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.CONFIG_FAILED_LOAD_ENV_VARIABLE;
 
@@ -111,8 +79,8 @@ public class ExtensionLoader<T> {
     private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(
         ExtensionLoader.class);
 
-    private static final Pattern NAME_SEPARATOR         = Pattern.compile("\\s*[,]+\\s*");
-    private static final String  SPECIAL_SPI_PROPERTIES = "special_spi.properties";
+    private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
+    private static final String SPECIAL_SPI_PROPERTIES = "special_spi.properties";
 
     private final ConcurrentMap<Class<?>, Object> extensionInstances = new ConcurrentHashMap<>(64);
 
@@ -124,17 +92,17 @@ public class ExtensionLoader<T> {
 
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<>();
 
-    private final    Map<String, Object>                   cachedActivates        = Collections.synchronizedMap(
+    private final Map<String, Object> cachedActivates = Collections.synchronizedMap(
         new LinkedHashMap<>());
-    private final    Map<String, Set<String>>              cachedActivateGroups   = Collections.synchronizedMap(
+    private final Map<String, Set<String>> cachedActivateGroups = Collections.synchronizedMap(
         new LinkedHashMap<>());
-    private final    Map<String, String[][]>               cachedActivateValues   = Collections.synchronizedMap(
+    private final Map<String, String[][]> cachedActivateValues = Collections.synchronizedMap(
         new LinkedHashMap<>());
-    private final    ConcurrentMap<String, Holder<Object>> cachedInstances        = new ConcurrentHashMap<>();
-    private final    Holder<Object>                        cachedAdaptiveInstance = new Holder<>();
-    private volatile Class<?>                              cachedAdaptiveClass    = null;
-    private          String                                cachedDefaultName;
-    private volatile Throwable                             createAdaptiveInstanceError;
+    private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
+    private final Holder<Object> cachedAdaptiveInstance = new Holder<>();
+    private volatile Class<?> cachedAdaptiveClass = null;
+    private String cachedDefaultName;
+    private volatile Throwable createAdaptiveInstanceError;
 
     private Set<Class<?>> cachedWrapperClasses;
 
@@ -152,13 +120,13 @@ public class ExtensionLoader<T> {
     /**
      * Record all unacceptable exceptions when using SPI
      */
-    private final Set<String>                  unacceptableExceptions = new ConcurrentHashSet<>();
-    private final ExtensionDirector            extensionDirector;
+    private final Set<String> unacceptableExceptions = new ConcurrentHashSet<>();
+    private final ExtensionDirector extensionDirector;
     private final List<ExtensionPostProcessor> extensionPostProcessors;
-    private InstantiationStrategy        instantiationStrategy;
-    private final ActivateComparator           activateComparator;
-    private final ScopeModel                   scopeModel;
-    private final AtomicBoolean                destroyed              = new AtomicBoolean();
+    private InstantiationStrategy instantiationStrategy;
+    private final ActivateComparator activateComparator;
+    private final ScopeModel scopeModel;
+    private final AtomicBoolean destroyed = new AtomicBoolean();
 
     public static void setLoadingStrategies(LoadingStrategy... strategies) {
         if (ArrayUtils.isNotEmpty(strategies)) {
@@ -213,14 +181,21 @@ public class ExtensionLoader<T> {
     }
 
     ExtensionLoader(Class<?> type, ExtensionDirector extensionDirector, ScopeModel scopeModel) {
+        // 当前扩展器需要加载的扩展类型
         this.type = type;
+        // 创建扩展器的作用域扩展加载管理器对象
         this.extensionDirector = extensionDirector;
+        // 从扩展访问器中获取扩展执行前后的回调器
         this.extensionPostProcessors = extensionDirector.getExtensionPostProcessors();
+        // 创建实例化对象的策略对象
         initInstantiationStrategy();
+        // 如果当前扩展类型为扩展注入器类型则设置当前注入器变量为空,否则的话获取一个扩展注入器扩展对象  TODO 迷糊
         this.injector = (type == ExtensionInjector.class ?
             null :
             extensionDirector.getExtensionLoader(ExtensionInjector.class).getAdaptiveExtension());
+        // 创建Activate注解的排序器
         this.activateComparator = new ActivateComparator(extensionDirector);
+        // 为扩展加载器下的域模型对象赋值
         this.scopeModel = scopeModel;
     }
 
@@ -370,7 +345,7 @@ public class ExtensionLoader<T> {
                                 activateGroup = ((Activate) activate).group();
                                 activateValue = ((Activate) activate).value();
                             } else if (Dubbo2CompactUtils.isEnabled() && Dubbo2ActivateUtils.isActivateLoaded()
-                             && Dubbo2ActivateUtils.getActivateClass().isAssignableFrom(activate.getClass())) {
+                                && Dubbo2ActivateUtils.getActivateClass().isAssignableFrom(activate.getClass())) {
                                 activateGroup = Dubbo2ActivateUtils.getGroup((Annotation) activate);
                                 activateValue = Dubbo2ActivateUtils.getValue((Annotation) activate);
                             } else {
@@ -731,8 +706,17 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 自适应扩展对象创建
+     *
+     * <p>
+     * 用于获取扩展对象，帮助我们通过SPI机制从扩展文件中找到需要的扩展类型并创建它的对象
+     *
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
+        //
         checkDestroyed();
         Object instance = cachedAdaptiveInstance.get();
         if (instance == null) {
@@ -746,6 +730,7 @@ public class ExtensionLoader<T> {
                 instance = cachedAdaptiveInstance.get();
                 if (instance == null) {
                     try {
+                        // 创建自适应扩展对象
                         instance = createAdaptiveExtension();
                         cachedAdaptiveInstance.set(instance);
                     } catch (Throwable t) {
@@ -1329,7 +1314,7 @@ public class ExtensionLoader<T> {
         Activate activate = clazz.getAnnotation(Activate.class);
         if (activate != null) {
             cachedActivates.put(name, activate);
-        } else if (Dubbo2CompactUtils.isEnabled() && Dubbo2ActivateUtils.isActivateLoaded()){
+        } else if (Dubbo2CompactUtils.isEnabled() && Dubbo2ActivateUtils.isActivateLoaded()) {
             // support com.alibaba.dubbo.common.extension.Activate
             Annotation oldActivate = clazz.getAnnotation(
                 Dubbo2ActivateUtils.getActivateClass());

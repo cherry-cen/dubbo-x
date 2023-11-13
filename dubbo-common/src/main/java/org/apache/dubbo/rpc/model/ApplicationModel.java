@@ -28,11 +28,7 @@ import org.apache.dubbo.common.utils.Assert;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.context.ConfigManager;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -46,11 +42,17 @@ import java.util.concurrent.locks.Lock;
  * Represent an application which is using Dubbo and store basic metadata info for using
  * during the processing of RPC invoking.
  * <p>
+ * 表示一个使用Dubbo的应用程序，并存储RPC调用过程中使用的基本元数据信息。
+ *
+ * <p>
  * ApplicationModel includes many ProviderModel which is about published services
  * and many Consumer Model which is about subscribed services.
  * <p>
+ * ApplicationModel包括许多关于发布服务的provider模型和许多关于订阅服务的Consumer模型。
+ *
+ * 应用程序级别模型，表示一个 Dubbo 应用（通常为一个 SpringApplication）。适配单JVM多应用场景，通常结合热发布使用，降低热发布对整个应用的影响范围。
+ *
  */
-
 public class ApplicationModel extends ScopeModel {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModel.class);
     public static final String NAME = "ApplicationModel";
@@ -81,6 +83,8 @@ public class ApplicationModel extends ScopeModel {
     }
 
     /**
+     * TODO 以下看不懂这个model是做什么的，设计的目的含义是什么，为什么有些是静态要单例模式，有一些则可以共享
+     *
      * During destroying the default FrameworkModel, the FrameworkModel.defaultModel() or ApplicationModel.defaultModel()
      * will return a broken model, maybe cause unpredictable problem.
      * Recommendation: Avoid using the default model as much as possible.
@@ -211,6 +215,7 @@ public class ApplicationModel extends ScopeModel {
 
     public ConfigManager getApplicationConfigManager() {
         if (configManager == null) {
+            // TODO 这里读到SPI扩展信息的时候使用
             configManager = (ConfigManager) this.getExtensionLoader(ApplicationExt.class)
                 .getExtension(ConfigManager.NAME);
         }

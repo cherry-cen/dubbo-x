@@ -30,13 +30,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p></p>
  * <p>ExtensionDirector supports multiple levels, and the child can inherit the parent's extension instances. </p>
  * <p>The way to find and create an extension instance is similar to Java classloader.</p>
+ * <p>
+ * <p>
+ * 作用域扩展加载程序管理器
+ * <p>
+ * 相对独立的类：用来管理扩展加载类、扩展域类
  */
 public class ExtensionDirector implements ExtensionAccessor {
 
     private final ConcurrentMap<Class<?>, ExtensionLoader<?>> extensionLoadersMap = new ConcurrentHashMap<>(64);
     private final ConcurrentMap<Class<?>, ExtensionScope> extensionScopeMap = new ConcurrentHashMap<>(64);
     private final ExtensionDirector parent;
+
+    /**
+     * 扩展支持的域模型类型（我理解有很多扩展，无论框架自带或用户自建，每个扩展都有支持的域级别，
+     * 如框架级别-FrameworkModel、应用级别-ApplicationModel、模块级别-ModuleNodel）
+     * 扩展配置的域只有和当前匹配了，才可以使用
+     */
     private final ExtensionScope scope;
+
+    // 在扩展初始化之前或之后调用的的《后处理器》
     private final List<ExtensionPostProcessor> extensionPostProcessors = new ArrayList<>();
     private final ScopeModel scopeModel;
     private final AtomicBoolean destroyed = new AtomicBoolean();
@@ -65,7 +78,10 @@ public class ExtensionDirector implements ExtensionAccessor {
     @Override
     @SuppressWarnings("unchecked")
     public <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
+        // 检查作用域扩展加载程序管理器是否已经销毁
         checkDestroyed();
+
+        // 参数合法性检查
         if (type == null) {
             throw new IllegalArgumentException("Extension type == null");
         }
@@ -77,7 +93,10 @@ public class ExtensionDirector implements ExtensionAccessor {
                 ") is not an extension, because it is NOT annotated with @" + SPI.class.getSimpleName() + "!");
         }
 
+        // 获取获取扩展加载器的顺序
+
         // 1. find in local cache
+        // 1）从缓存中获取
         ExtensionLoader<T> loader = (ExtensionLoader<T>) extensionLoadersMap.get(type);
 
         ExtensionScope scope = extensionScopeMap.get(type);
@@ -87,12 +106,14 @@ public class ExtensionDirector implements ExtensionAccessor {
             extensionScopeMap.put(type, scope);
         }
 
+        // 2）如果前面没找到则查询扩展类型的scope所属域,如果是当前域扩展则从直接创建扩展加载器
         if (loader == null && scope == ExtensionScope.SELF) {
             // create an instance in self scope
             loader = createExtensionLoader0(type);
         }
 
         // 2. find in parent
+        // 3）从父扩展访问器查询
         if (loader == null) {
             if (this.parent != null) {
                 loader = this.parent.getExtensionLoader(type);
@@ -100,6 +121,7 @@ public class ExtensionDirector implements ExtensionAccessor {
         }
 
         // 3. create it
+        // 4）经过以上三步仍未找到，则创建
         if (loader == null) {
             loader = createExtensionLoader(type);
         }
@@ -109,6 +131,8 @@ public class ExtensionDirector implements ExtensionAccessor {
 
     private <T> ExtensionLoader<T> createExtensionLoader(Class<T> type) {
         ExtensionLoader<T> loader = null;
+        // 检查当前类型注解的scope和当前作用域扩展管理器的scope是否一致
+        // 当前作用域扩展器程序管理器作用域，是在初始化域模型的通过构造函数设置
         if (isScopeMatched(type)) {
             // if scope is matched, just create it
             loader = createExtensionLoader0(type);
@@ -118,8 +142,10 @@ public class ExtensionDirector implements ExtensionAccessor {
 
     @SuppressWarnings("unchecked")
     private <T> ExtensionLoader<T> createExtensionLoader0(Class<T> type) {
+        // 检查当前作用域扩展加载程序管理器是否销毁
         checkDestroyed();
         ExtensionLoader<T> loader;
+        // 为当前扩展类型创建一个扩展访问器并缓存到,当前成员变量extensionLoadersMap中
         extensionLoadersMap.putIfAbsent(type, new ExtensionLoader<T>(type, this, scopeModel));
         loader = (ExtensionLoader<T>) extensionLoadersMap.get(type);
         return loader;

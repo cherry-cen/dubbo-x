@@ -26,29 +26,8 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.threadpool.manager.ExecutorRepository;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.ConcurrentHashMapUtils;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ConfigCenterConfig;
-import org.apache.dubbo.config.ConsumerConfig;
-import org.apache.dubbo.config.MetadataReportConfig;
-import org.apache.dubbo.config.MetricsConfig;
-import org.apache.dubbo.config.ModuleConfig;
-import org.apache.dubbo.config.MonitorConfig;
-import org.apache.dubbo.config.ProtocolConfig;
-import org.apache.dubbo.config.ProviderConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.ServiceConfig;
-import org.apache.dubbo.config.SslConfig;
-import org.apache.dubbo.config.TracingConfig;
-import org.apache.dubbo.config.bootstrap.builders.ApplicationBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ConfigCenterBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ConsumerBuilder;
-import org.apache.dubbo.config.bootstrap.builders.MetadataReportBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ProtocolBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ProviderBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ReferenceBuilder;
-import org.apache.dubbo.config.bootstrap.builders.RegistryBuilder;
-import org.apache.dubbo.config.bootstrap.builders.ServiceBuilder;
+import org.apache.dubbo.config.*;
+import org.apache.dubbo.config.bootstrap.builders.*;
 import org.apache.dubbo.config.context.ConfigManager;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.model.FrameworkModel;
@@ -73,6 +52,8 @@ import static java.util.Collections.singletonList;
  * <p>
  * Get singleton instance by calling static method {@link #getInstance()}.
  * Designed as singleton because some classes inside Dubbo, such as ExtensionLoader, are designed only for one instance per process.
+ * <p>
+ * bootstrap：[计] 引导程序，辅助程序
  *
  * @since 2.7.5
  */
@@ -110,7 +91,7 @@ public final class DubboBootstrap {
         if (instance == null) {
             synchronized (DubboBootstrap.class) {
                 if (instance == null) {
-                    instance = DubboBootstrap.getInstance(ApplicationModel.defaultModel());
+                    instance = DubboBootstrap.getInstance(/* 创建默认的应用级模型 */ApplicationModel.defaultModel());
                 }
             }
         }
@@ -159,9 +140,16 @@ public final class DubboBootstrap {
         ApplicationModel.reset();
     }
 
+    /**
+     * 构造DubboBootstrap，做了很多事情，还搞不懂这么做的目的
+     *
+     * @param applicationModel
+     */
     private DubboBootstrap(ApplicationModel applicationModel) {
         this.applicationModel = applicationModel;
+        // 从应用级模型获取配置管理，涉及到SPI扩展
         configManager = applicationModel.getApplicationConfigManager();
+        // 从应用级模型获取环境信息，涉及SPI扩展
         environment = applicationModel.modelEnvironment();
 
         executorRepository = ExecutorRepository.getInstance(applicationModel);
@@ -170,16 +158,19 @@ public final class DubboBootstrap {
         applicationDeployer.addDeployListener(new DeployListenerAdapter<ApplicationModel>() {
             @Override
             public void onStarted(ApplicationModel scopeModel) {
+                // 通知dubbo框架开启事件
                 notifyStarted(applicationModel);
             }
 
             @Override
             public void onStopped(ApplicationModel scopeModel) {
+                // 通知dubbo关停事件
                 notifyStopped(applicationModel);
             }
 
             @Override
             public void onFailure(ApplicationModel scopeModel, Throwable cause) {
+                // 通知dubbo启动失败事件
                 notifyStopped(applicationModel);
             }
         });
@@ -428,6 +419,7 @@ public final class DubboBootstrap {
      * @return current {@link DubboBootstrap} instance
      */
     public DubboBootstrap application(ApplicationConfig applicationConfig) {
+        // dubbo3.0.8源码解读，设置scopeModel是在执行ServiceConfig构造方法触发的
         applicationConfig.setScopeModel(applicationModel);
         configManager.setApplication(applicationConfig);
         return this;
@@ -704,7 +696,7 @@ public final class DubboBootstrap {
         return this;
     }
 
-    public DubboBootstrap tracing(TracingConfig tracing){
+    public DubboBootstrap tracing(TracingConfig tracing) {
         tracing.setScopeModel(applicationModel);
         configManager.setTracing(tracing);
         return this;

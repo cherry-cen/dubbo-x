@@ -74,6 +74,10 @@ import static org.apache.dubbo.config.Constants.PARAMETERS;
 /**
  * Utility methods and public methods for parsing configuration
  *
+ * 好像是全局的相关配置的抽象类，抽象了很多公共方法
+ *
+ * 最顶层服务配置类型
+ *
  * @export
  */
 public abstract class AbstractConfig implements Serializable {
@@ -421,10 +425,16 @@ public abstract class AbstractConfig implements Serializable {
 
     public final void setScopeModel(ScopeModel scopeModel) {
         if (scopeModel != null && this.scopeModel != scopeModel) {
+            // 检查是否参数合法
             checkScopeModel(scopeModel);
+
+            // 重新设置新的scopeModel
             ScopeModel oldScopeModel = this.scopeModel;
             this.scopeModel = scopeModel;
+
             // reinitialize spi extension and change referenced config's scope model
+            // 被子类重写的方法，根据多台会调用具体子类型的这个方法
+            // 子类应该重写此方法以初始化其SPI扩展并更改引用配置的范围模型（应用模型管理的配置中心、元数据中心），发生改变了要用新的
             this.postProcessAfterScopeModelChanged(oldScopeModel, this.scopeModel);
         }
     }
@@ -436,6 +446,8 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     /**
+     * 模型对象改变的时候要执行的操作
+     *
      * Subclass should override this method to initialize its SPI extensions and change referenced config's scope model.
      * <p>
      * For example:

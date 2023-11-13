@@ -68,25 +68,33 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     /**
      * The interface name of the exported service
+     * 暴漏服务的接口名字
      */
     protected String interfaceName;
 
     /**
      * The classLoader of interface belong to
+     *
      */
     protected transient ClassLoader interfaceClassLoader;
 
     /**
      * The remote service version the customer/provider side will reference
+     * 服务接口的版本号
      */
     protected String version;
 
     /**
      * The remote service group the customer/provider side will reference
+     * 客户/提供方将引用的远程服务分组
      */
     protected String group;
 
+    /**
+     * 服务元数据
+     */
     protected ServiceMetadata serviceMetadata;
+
     /**
      * Local impl class name for the service interface
      */
@@ -94,21 +102,25 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     /**
      * Local stub class name for the service interface
+     * 服务接口的本地impl类名
      */
     protected String stub;
 
     /**
      * Service monitor
+     * 服务监控配置
      */
     protected MonitorConfig monitor;
 
     /**
      * Strategies for generating dynamic agents，there are two strategies can be chosen: jdk and javassist
+     * 对于生成动态代理的策略
      */
     protected String proxy;
 
     /**
      * Cluster type
+     * 容错类型
      */
     protected String cluster;
 
@@ -225,18 +237,28 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     @Override
     protected void postProcessAfterScopeModelChanged(ScopeModel oldScopeModel, ScopeModel newScopeModel) {
+        // 调用AbstraceConfig空逻辑
         super.postProcessAfterScopeModelChanged(oldScopeModel, newScopeModel);
         // change referenced config's scope model
+        // 获取应用程序模型对象
         ApplicationModel applicationModel = ScopeModelUtil.getApplicationModel(getScopeModel());
+
+        // 以下两个判断语句块，提现：应用模型管理了配置中心、元数据中心
+        // 为配置中心对象设置ApplicationModel类型对象(当前阶段配置中心配置对象为空)
         if (this.configCenter != null && this.configCenter.getScopeModel() != applicationModel) {
             this.configCenter.setScopeModel(applicationModel);
         }
+        // 为元数据配置对象设置ApplicationModel类型对象(当前阶段数据配置配置对象为空)
         if (this.metadataReportConfig != null && this.metadataReportConfig.getScopeModel() != applicationModel) {
             this.metadataReportConfig.setScopeModel(applicationModel);
         }
+
+        // 为MonitorConfig服务监控配置对象设置ApplicationModel类型对象(当前阶段数据配置配置对象为空)
         if (this.monitor != null && this.monitor.getScopeModel() != applicationModel) {
             this.monitor.setScopeModel(applicationModel);
         }
+
+        // //如果注册中心配置列表不为空则为每个注册中心配置设置一个ApplicationModel类型对象(当前注册中心对象都为空)
         if (CollectionUtils.isNotEmpty(this.registries)) {
             this.registries.forEach(registryConfig -> {
                 if (registryConfig.getScopeModel() != applicationModel) {

@@ -230,7 +230,9 @@ public class FrameworkModel extends ScopeModel {
         ApplicationModel appModel = this.defaultAppModel;
         if (appModel == null) {
             // check destroyed before acquire inst lock, avoid blocking during destroying
+            // 检查应用级别模型是否被销毁，防止因为销毁阻塞这里的创建
             checkDestroyed();
+            // 重置默认应用模型（重置FrameworkModel逻辑类似）
             resetDefaultAppModel();
             if ((appModel = this.defaultAppModel) == null) {
                 synchronized (instLock) {
@@ -318,6 +320,7 @@ public class FrameworkModel extends ScopeModel {
             }
         }
     }
+
 
     private static void resetDefaultFrameworkModel() {
         synchronized (globalLock) {

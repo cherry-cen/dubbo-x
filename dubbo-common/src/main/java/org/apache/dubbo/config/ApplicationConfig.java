@@ -73,6 +73,7 @@ import static org.apache.dubbo.config.Constants.TEST_ENVIRONMENT;
 
 /**
  * The application info
+ * 应用程序信息，记录如应用名称（order-service-v2、cart-service）、应用版本、应用归属人、归属组织等
  *
  * @export
  */

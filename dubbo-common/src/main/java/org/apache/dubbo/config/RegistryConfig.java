@@ -64,6 +64,8 @@ public class RegistryConfig extends AbstractConfig {
 
     /**
      * Protocol for register center
+     *
+     * 就是什么类型的注册中心，示例：zookeeper、redis
      */
     private String protocol;
 
@@ -244,9 +246,11 @@ public class RegistryConfig extends AbstractConfig {
         this.address = address;
         if (address != null) {
             try {
+                // 解析成dubbo框架自己定义的URL类
                 URL url = URL.valueOf(address);
 
                 // Refactor since 2.7.8
+                // 更新类中属性（用户名、密码、协议、端口）
                 updatePropertyIfAbsent(this::getUsername, this::setUsername, url.getUsername());
                 updatePropertyIfAbsent(this::getPassword, this::setPassword, url.getPassword());
                 updatePropertyIfAbsent(this::getProtocol, this::setProtocol, url.getProtocol());

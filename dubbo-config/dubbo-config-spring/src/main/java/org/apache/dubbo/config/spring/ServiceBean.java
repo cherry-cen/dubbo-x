@@ -23,7 +23,6 @@ import org.apache.dubbo.config.spring.context.event.ServiceBeanExportedEvent;
 import org.apache.dubbo.config.spring.util.DubboBeanUtils;
 import org.apache.dubbo.config.support.Parameter;
 import org.apache.dubbo.rpc.model.ModuleModel;
-
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -35,11 +34,13 @@ import org.springframework.context.ApplicationEventPublisherAware;
 
 /**
  * ServiceFactoryBean
+ * <p>
+ * 服务工厂Bean ,这个主要是Spring模块来简化配置的一个服务工厂Bean
  *
  * @export
  */
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean,
-        ApplicationContextAware, BeanNameAware, ApplicationEventPublisherAware {
+    ApplicationContextAware, BeanNameAware, ApplicationEventPublisherAware {
 
 
     private static final long serialVersionUID = 213195494150089726L;

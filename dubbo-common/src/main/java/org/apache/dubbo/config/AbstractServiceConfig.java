@@ -35,6 +35,8 @@ import static org.apache.dubbo.common.constants.CommonConstants.SERVICE_FILTER_K
 /**
  * AbstractServiceConfig
  *
+ * 抽象的服务配置，与我们的服务提供者有了具体的关系。主要记录了一些服务提供者的公共配置
+ *
  * @export
  */
 public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
@@ -43,31 +45,37 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     /**
      * The service version
+     * 服务版本
      */
     protected String version;
 
     /**
      * The service group
+     * 服务分组
      */
     protected String group;
 
     /**
      * whether the service is deprecated
+     *
      */
     protected Boolean deprecated; // false;
 
     /**
      * The time delay register service (milliseconds)
+     * 服务延迟注册毫秒数
      */
     protected Integer delay;
 
     /**
      * Whether to export the service
+     * 是否暴漏服务
      */
     protected Boolean export;
 
     /**
      * The service weight
+     * 服务权重
      */
     protected Integer weight;
 
@@ -80,6 +88,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
      * Whether to register as a dynamic service or not on register center, the value is true, the status will be enabled
      * after the service registered,and it needs to be disabled manually; if you want to disable the service, you also need
      * manual processing
+     * 是否为动态服务
      */
     protected Boolean dynamic; // true;
 
@@ -96,6 +105,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
     /**
      * The protocol list the service will export with
      * Also see {@link #protocolIds}, only one of them will work.
+     * 服务协议类型
      */
     protected List<ProtocolConfig> protocols;
 
@@ -112,6 +122,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     /**
      * Whether to register
+     * 是否注册
      */
     private Boolean register;
 

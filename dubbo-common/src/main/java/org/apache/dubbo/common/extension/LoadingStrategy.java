@@ -18,6 +18,11 @@ package org.apache.dubbo.common.extension;
 
 import org.apache.dubbo.common.lang.Prioritized;
 
+/**
+ * 扩展加载策略
+ * <p>
+ * 不同的加载策略去不同的文件目录加载扩展
+ */
 public interface LoadingStrategy extends Prioritized {
 
     String directory();

@@ -25,14 +25,16 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_PROTOCOL;
-import static org.apache.dubbo.common.constants.CommonConstants.SSL_ENABLED_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.THREAD_POOL_EXHAUSTED_LISTENERS_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_UNEXPECTED_EXCEPTION;
 import static org.apache.dubbo.common.constants.ProviderConstants.DEFAULT_PREFER_SERIALIZATION;
 
 /**
  * ProtocolConfig
+ * <p>
+ * 协议是 RPC 的核心，它规范了数据在网络中的传输内容和格式，支持：dubbo（缺省协议）、Triple、gRpc等。
+ * <p>
+ * dubbo框架开发者们定义的通信规范，用这个类去管理各种协议
  *
  * @export
  */

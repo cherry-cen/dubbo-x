@@ -244,6 +244,8 @@ class URL implements Serializable {
      * - dubbo://host:port/path?param=value
      * - URL.encode("dubbo://host:port/path?param=value")
      *
+     * 将一个普通或者编码url字符串解析成结构化的URL。这里的结构化，就是解析成dubbo框架定义的URL组成格式
+     *
      * @param url,     url string
      * @param encoded, encoded or decoded
      * @return

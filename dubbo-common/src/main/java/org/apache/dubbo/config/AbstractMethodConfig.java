@@ -38,32 +38,38 @@ public abstract class AbstractMethodConfig extends AbstractConfig {
 
     /**
      * The timeout for remote invocation in milliseconds
+     * 服务方法调用超时时间
      */
     protected Integer timeout;
 
     /**
      * The retry times
+     * 重试次数
      */
     protected Integer retries;
 
     /**
      * max concurrent invocations
+     * 最大并发调用数
      */
     protected Integer actives;
 
     /**
      * The load balance
+     * 负载均衡策略
      */
     protected String loadbalance;
 
     /**
      * Whether to async
      * note that: it is an unreliable asynchronous that ignores return values and does not block threads.
+     * 是否异步调用
      */
     protected Boolean async;
 
     /**
      * Whether to ack async-sent
+     * 是否确认异步发送
      */
     protected Boolean sent;
 
