@@ -38,7 +38,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
- * Model of dubbo framework, it can be shared with multiple applications.
+ * FrameworkModel ：Dubbo 框架的顶级模型，表示 Dubbo 框架的全局运行环境，适配《《《多应用混合部署》》》的场景，降低资源成本。
+ * <p>
+ * 如：假设我们有一个在线教育平台，平台下有多个租户，而我们希望使这些租户的服务部署在同一个 JVM 上以节省资源，
+ * 但它们之间可能使用不同的注册中心、监控设施、协议等，因此我们可以为每个租户分配一个 FrameWorkModel 实例来实现这种隔离。
+ * <p>
+ * FrameworkModel负责管理整个Dubbo框架的各种全局配置、元数据以及默认配置。
  */
 public class FrameworkModel extends ScopeModel {
 
@@ -170,6 +175,7 @@ public class FrameworkModel extends ScopeModel {
      * During destroying the default FrameworkModel, the FrameworkModel.defaultModel() or ApplicationModel.defaultModel()
      * will return a broken model, maybe cause unpredictable problem.
      * Recommendation: Avoid using the default model as much as possible.
+     *
      * @return the global default FrameworkModel
      */
     public static FrameworkModel defaultModel() {
@@ -189,6 +195,7 @@ public class FrameworkModel extends ScopeModel {
 
     /**
      * Get all framework model instances
+     *
      * @return
      */
     public static List<FrameworkModel> getAllInstances() {
@@ -216,6 +223,7 @@ public class FrameworkModel extends ScopeModel {
 
     /**
      * Get or create default application model
+     *
      * @return
      */
     public ApplicationModel defaultApplication() {
@@ -267,7 +275,7 @@ public class FrameworkModel extends ScopeModel {
 
     /**
      * Protocols are special resources that need to be destroyed as soon as possible.
-     *
+     * <p>
      * Since connections inside protocol are not classified by applications, trying to destroy protocols in advance might only work for singleton application scenario.
      */
     void tryDestroyProtocols() {

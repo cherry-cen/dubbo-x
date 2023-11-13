@@ -286,13 +286,22 @@ public abstract class ServiceConfigBase<T> extends AbstractServiceConfig {
     }
 
 
+    /**
+     * 设置暴漏服务接口（也兼容支持类：rest prototal支持设置实现类或者null）
+     * @param interfaceClass
+     */
     public void setInterface(Class<?> interfaceClass) {
         // rest protocol  allow  set impl class
+        // 检查如果是非null非接口，检查protocols，只有rest协议允许类，其余协议不支持类
         if (interfaceClass != null && !interfaceClass.isInterface() && !canSkipInterfaceCheck()) {
             throw new IllegalStateException("The interface class " + interfaceClass + " is not a interface!");
         }
+
+        // 设置接口类
         this.interfaceClass = interfaceClass;
+        // 设置接口名
         setInterface(interfaceClass == null ? null : interfaceClass.getName());
+        // 设置接口类加载器
         if (getInterfaceClassLoader() == null) {
             setInterfaceClassLoader(interfaceClass == null ? null : interfaceClass.getClassLoader());
         }

@@ -34,7 +34,9 @@ public class Application {
 
     private static void startWithBootstrap() {
         ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
+        // 设置要暴露的服务接口信息（设置基础信息）
         service.setInterface(DemoService.class);
+        // 设置要暴露的服务实现类（设置基础信息）
         service.setRef(new DemoServiceImpl());
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
