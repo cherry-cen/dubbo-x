@@ -184,6 +184,7 @@ public class FrameworkModel extends ScopeModel {
             synchronized (globalLock) {
                 resetDefaultFrameworkModel();
                 if (defaultInstance == null) {
+                    // 初始化模型对象（会用到扩展机制）
                     defaultInstance = new FrameworkModel();
                 }
                 instance = defaultInstance;
