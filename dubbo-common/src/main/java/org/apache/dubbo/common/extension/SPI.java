@@ -50,6 +50,8 @@ import java.lang.annotation.Target;
  * Fails to load Extension("mina"). When user configure to use mina, dubbo will complain the extension cannot be loaded,
  * instead of reporting which extract extension implementation fails and the extract reason.
  * </p>
+ *
+ * 简单看了网友的分享：<a href="https://juejin.cn/post/6872138926216511501#heading-12">...</a>，对于SPI有个简单的认识，能加快看dubbo源码速度
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

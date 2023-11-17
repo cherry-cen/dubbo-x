@@ -81,7 +81,7 @@ public class ExtensionDirector implements ExtensionAccessor {
         // 检查作用域扩展加载程序管理器是否已经销毁
         checkDestroyed();
 
-        // 参数合法性检查
+        // 参数合法性检查：只支持带有SPI注解的接口！！！
         if (type == null) {
             throw new IllegalArgumentException("Extension type == null");
         }
@@ -131,12 +131,14 @@ public class ExtensionDirector implements ExtensionAccessor {
 
     private <T> ExtensionLoader<T> createExtensionLoader(Class<T> type) {
         ExtensionLoader<T> loader = null;
-        // 检查当前类型注解的scope和当前作用域扩展管理器的scope是否一致
-        // 当前作用域扩展器程序管理器作用域，是在初始化域模型的通过构造函数设置
+        // 检查当前带有SPI注解的接口，设置的的scope和当前作用域扩展管理器的scope是否一致
+        // 当前作用域扩展器程序管理器的作用域{@link ExtensionDirector#scope}，是在初始化域模型的通过构造函数设置
         if (isScopeMatched(type)) {
             // if scope is matched, just create it
             loader = createExtensionLoader0(type);
         }
+
+        // 这里看着可能返回null（但目前dubbo源码中并没有在使用地方做判空处理，猜测自定义的话要注意）
         return loader;
     }
 
@@ -145,7 +147,7 @@ public class ExtensionDirector implements ExtensionAccessor {
         // 检查当前作用域扩展加载程序管理器是否销毁
         checkDestroyed();
         ExtensionLoader<T> loader;
-        // 为当前扩展类型创建一个扩展访问器并缓存到,当前成员变量extensionLoadersMap中
+        // 为当前扩展类型创建一个扩展访问器并缓存到，当前成员变量extensionLoadersMap中
         extensionLoadersMap.putIfAbsent(type, new ExtensionLoader<T>(type, this, scopeModel));
         loader = (ExtensionLoader<T>) extensionLoadersMap.get(type);
         return loader;

@@ -18,12 +18,20 @@ package org.apache.dubbo.common.extension;
 
 /**
  * Uniform accessor for extension
- * 扩展的统一访问器
+ * 扩展的统一访问器，dubbo框架参考Java SPI定义了一套自己的SPI功能，这里就是对各种扩展类（能力）进行统一管理访问的接口
  */
 public interface ExtensionAccessor {
 
     ExtensionDirector getExtensionDirector();
 
+    /**
+     * type是我们想要加载的扩展类型，每个想要加载的类型在dubbo框架都有一个相应的ExtensionLoader。
+     * 而ExtendsionDirector就是负责管理这些ExtensionLoader的。
+     *
+     * @param type 带有SPI注解的扩展类型
+     * @param <T>  扩展类型
+     * @return 管理扩展类型的ExtensionLoader
+     */
     default <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         return this.getExtensionDirector().getExtensionLoader(type);
     }

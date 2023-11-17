@@ -18,11 +18,7 @@ package org.apache.dubbo.common.beans.support;
 
 import org.apache.dubbo.common.beans.factory.ScopeBeanFactory;
 import org.apache.dubbo.common.extension.ExtensionLoader;
-import org.apache.dubbo.rpc.model.ApplicationModel;
-import org.apache.dubbo.rpc.model.FrameworkModel;
-import org.apache.dubbo.rpc.model.ModuleModel;
-import org.apache.dubbo.rpc.model.ScopeModel;
-import org.apache.dubbo.rpc.model.ScopeModelAccessor;
+import org.apache.dubbo.rpc.model.*;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -33,6 +29,9 @@ import java.util.List;
  */
 public class InstantiationStrategy {
 
+    /**
+     * TODO 既然用到了{@link ScopeModelAwareExtensionProcessor}，除了可以访问不同的域模型，那初始化的前后置处理在什么时候触发？
+     */
     private final ScopeModelAccessor scopeModelAccessor;
 
     public InstantiationStrategy() {
@@ -43,6 +42,15 @@ public class InstantiationStrategy {
         this.scopeModelAccessor = scopeModelAccessor;
     }
 
+
+    /**
+     * Instantiate a new instance of the given class.
+     *
+     * @param type
+     * @param <T>
+     * @return
+     * @throws ReflectiveOperationException
+     */
     @SuppressWarnings("unchecked")
     public <T> T instantiate(Class<T> type) throws ReflectiveOperationException {
 

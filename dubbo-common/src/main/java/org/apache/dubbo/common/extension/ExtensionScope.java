@@ -73,6 +73,8 @@ public enum ExtensionScope {
 
     /**
      * self-sufficient, creates an instance for per scope, for special SPI extension, like {@link ExtensionInjector}
+     *
+     * 为每个域创建一个实例，为域创建自己的ExtensionLoader实例
      */
     SELF
 }

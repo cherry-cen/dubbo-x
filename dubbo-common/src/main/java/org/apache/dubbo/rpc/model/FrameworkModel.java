@@ -92,6 +92,7 @@ public class FrameworkModel extends ScopeModel {
                 }
                 initialize();
 
+                // 这里开始看dubbo扩展机制
                 TypeDefinitionBuilder.initBuilders(this);
 
                 serviceRepository = new FrameworkServiceRepository(this);

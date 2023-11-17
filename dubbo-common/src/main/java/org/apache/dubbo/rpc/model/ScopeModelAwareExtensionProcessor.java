@@ -18,6 +18,12 @@ package org.apache.dubbo.rpc.model;
 
 import org.apache.dubbo.common.extension.ExtensionPostProcessor;
 
+/**
+ * ExtensionPostProcessor that can access the scope model.
+ *
+ * aware:察觉到、意识到。这个类就是能察觉到ScopeModel的一个扩展处理器
+ *
+ */
 public class ScopeModelAwareExtensionProcessor implements ExtensionPostProcessor, ScopeModelAccessor {
     private ScopeModel scopeModel;
     private FrameworkModel frameworkModel;

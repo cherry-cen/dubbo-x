@@ -181,7 +181,7 @@ public class ExtensionLoader<T> {
     }
 
     ExtensionLoader(Class<?> type, ExtensionDirector extensionDirector, ScopeModel scopeModel) {
-        // 当前扩展器需要加载的扩展类型
+        // 当前扩展器需要加载的扩展类型，如{@link TypeBuilder}，带有SPI注解的接口
         this.type = type;
         // 创建扩展器的作用域扩展加载管理器对象
         this.extensionDirector = extensionDirector;
@@ -189,7 +189,8 @@ public class ExtensionLoader<T> {
         this.extensionPostProcessors = extensionDirector.getExtensionPostProcessors();
         // 创建实例化对象的策略对象
         initInstantiationStrategy();
-        // 如果当前扩展类型为扩展注入器类型则设置当前注入器变量为空,否则的话获取一个扩展注入器扩展对象  TODO 迷糊
+        // 如果当前扩展类型为扩展注入器类型则设置当前注入器变量为空,否则的话获取一个扩展注入器扩展对象
+        // TODO 为什么要单独判断ExtensionInjector
         this.injector = (type == ExtensionInjector.class ?
             null :
             extensionDirector.getExtensionLoader(ExtensionInjector.class).getAdaptiveExtension());
@@ -199,6 +200,9 @@ public class ExtensionLoader<T> {
         this.scopeModel = scopeModel;
     }
 
+    /**
+     * 初始化实例化对象的策略对象
+     */
     private void initInstantiationStrategy() {
         instantiationStrategy = extensionPostProcessors.stream()
             .filter(extensionPostProcessor -> extensionPostProcessor instanceof ScopeModelAccessor)
@@ -716,24 +720,31 @@ public class ExtensionLoader<T> {
      */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
-        //
+        // 检查对象是否销毁
         checkDestroyed();
+        // 从缓存中获取
         Object instance = cachedAdaptiveInstance.get();
         if (instance == null) {
+            // 缓存中没有，则创建自适应扩展对象
             if (createAdaptiveInstanceError != null) {
+                // 创建自适应扩展对象失败，直接抛出异常
                 throw new IllegalStateException(
                     "Failed to create adaptive instance: " + createAdaptiveInstanceError.toString(),
                     createAdaptiveInstanceError);
             }
 
+            // 经典双重检查锁
             synchronized (cachedAdaptiveInstance) {
+                // 再次从本地缓存中获取
                 instance = cachedAdaptiveInstance.get();
                 if (instance == null) {
                     try {
                         // 创建自适应扩展对象
                         instance = createAdaptiveExtension();
+                        // 将创建对象缓存起来
                         cachedAdaptiveInstance.set(instance);
                     } catch (Throwable t) {
+                        // 记录创建自适应扩展对象失败的异常，用于后续抛出异常 No#731，这样做后续就不用重复操作了，因为肯定也是失败的
                         createAdaptiveInstanceError = t;
                         throw new IllegalStateException(
                             "Failed to create adaptive instance: " + t.toString(), t);
@@ -851,6 +862,12 @@ public class ExtensionLoader<T> {
         return getExtensionClasses().containsKey(name);
     }
 
+    /**
+     * 通过setter方法注入属性
+     *
+     * @param instance
+     * @return
+     */
     private T injectExtension(T instance) {
         if (injector == null) {
             return instance;
@@ -946,12 +963,16 @@ public class ExtensionLoader<T> {
     }
 
     private Map<String, Class<?>> getExtensionClasses() {
+        // 先从缓存中获取类信息
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
+            // 缓存中不存在
             synchronized (cachedClasses) {
+                // 再次从缓存中获取，可能其他线程已经执行，放入缓存
                 classes = cachedClasses.get();
                 if (classes == null) {
                     try {
+                        // 加载扩展类信息
                         classes = loadExtensionClasses();
                     } catch (InterruptedException e) {
                         logger.error(COMMON_ERROR_LOAD_EXTENSION, "", "",
@@ -973,11 +994,13 @@ public class ExtensionLoader<T> {
      */
     @SuppressWarnings("deprecation")
     private Map<String, Class<?>> loadExtensionClasses() throws InterruptedException {
+        // 检查loader是否已销毁
         checkDestroyed();
         cacheDefaultExtensionName();
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
 
+        // 使用Java SPI加载扩展配置文件读取策略
         for (LoadingStrategy strategy : strategies) {
             loadDirectory(extensionClasses, strategy, type.getName());
 
@@ -990,6 +1013,14 @@ public class ExtensionLoader<T> {
         return extensionClasses;
     }
 
+    /**
+     * 加载目录
+     *
+     * @param extensionClasses 扩展类信息
+     * @param strategy         文件加载策略
+     * @param type             带有SPI注解的扩展类型，如{@link org.apache.dubbo.metadata.definition.builder.TypeBuilder}
+     * @throws InterruptedException
+     */
     private void loadDirectory(Map<String, Class<?>> extensionClasses, LoadingStrategy strategy,
                                String type) throws InterruptedException {
         loadDirectoryInternal(extensionClasses, strategy, type);
@@ -1012,6 +1043,7 @@ public class ExtensionLoader<T> {
      * extract and cache default extension name if exists
      */
     private void cacheDefaultExtensionName() {
+        // 检查是否SPI注解
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation == null) {
             return;
