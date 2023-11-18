@@ -1018,13 +1018,16 @@ public class ExtensionLoader<T> {
      *
      * @param extensionClasses 扩展类信息
      * @param strategy         文件加载策略
-     * @param type             带有SPI注解的扩展类型，如{@link org.apache.dubbo.metadata.definition.builder.TypeBuilder}
+     * @param type             带有SPI注解的扩展类型{名称}，如{@link org.apache.dubbo.metadata.definition.builder.TypeBuilder}
      * @throws InterruptedException
      */
     private void loadDirectory(Map<String, Class<?>> extensionClasses, LoadingStrategy strategy,
                                String type) throws InterruptedException {
+        // 开始加载扩展类信息，放入extensionClasses
         loadDirectoryInternal(extensionClasses, strategy, type);
+
         if (Dubbo2CompactUtils.isEnabled()) {
+            // dubbo交由apacha孵化，做版本兼容
             try {
                 String oldType = type.replace("org.apache", "com.alibaba");
                 if (oldType.equals(type)) {
@@ -1063,22 +1066,33 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     *
+     * @param extensionClasses
+     * @param loadingStrategy
+     * @param type
+     * @throws InterruptedException
+     */
     private void loadDirectoryInternal(Map<String, Class<?>> extensionClasses,
                                        LoadingStrategy loadingStrategy, String type)
         throws InterruptedException {
+        // 路径 + 扩展类名称，示例：META-INF/dubbo/org.apache.dubbo.metadata.definition.builder.TypeBuilder
         String fileName = loadingStrategy.directory() + type;
         try {
             List<ClassLoader> classLoadersToLoad = new LinkedList<>();
 
             // try to load from ExtensionLoader's ClassLoader first
+            // 判断是否优先使用ExtensionLoader类加载器
             if (loadingStrategy.preferExtensionClassLoader()) {
                 ClassLoader extensionLoaderClassLoader = ExtensionLoader.class.getClassLoader();
                 if (ClassLoader.getSystemClassLoader() != extensionLoaderClassLoader) {
+                    // 非系统类加载，放入列表，用于之后类加载
                     classLoadersToLoad.add(extensionLoaderClassLoader);
                 }
             }
 
             if (specialSPILoadingStrategyMap.containsKey(type)) {
+                // 跳过只有dubbo框架实现的特定SPI，减少资源扫描，加快启动
                 String internalDirectoryType = specialSPILoadingStrategyMap.get(type);
                 //skip to load spi when name don't match
                 if (!LoadingStrategy.ALL.equals(
@@ -1089,10 +1103,14 @@ public class ExtensionLoader<T> {
                 classLoadersToLoad.clear();
                 classLoadersToLoad.add(ExtensionLoader.class.getClassLoader());
             } else {
+                // 处理普通的扩展类
                 // load from scope model
+                // 在ExtensionLoader构造函数赋值scopeModel（就是对应的FrameworkModel、ApplicationModel、ModuleModel）
+                // 这里的classLoaders是在调用各域对象调用父类initialize方法后，设置的classLoaders
                 Set<ClassLoader> classLoaders = scopeModel.getClassLoaders();
 
                 if (CollectionUtils.isEmpty(classLoaders)) {
+                    // 如果加载域对象的类加载器为空，则直接加载文件，获取扩展类信息资源，之后再加载类信息
                     Enumeration<java.net.URL> resources = ClassLoader.getSystemResources(fileName);
                     if (resources != null) {
                         while (resources.hasMoreElements()) {
@@ -1107,6 +1125,7 @@ public class ExtensionLoader<T> {
                 }
             }
 
+            // 否则还是从收集的类加载器，加载类信息
             Map<ClassLoader, Set<java.net.URL>> resources = ClassLoaderResourceLoader.loadResources(
                 fileName, classLoadersToLoad);
             resources.forEach(((classLoader, urls) -> {
