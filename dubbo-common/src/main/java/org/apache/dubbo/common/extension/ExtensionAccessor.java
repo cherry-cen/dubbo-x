@@ -16,12 +16,24 @@
  */
 package org.apache.dubbo.common.extension;
 
+import org.apache.dubbo.rpc.model.ScopeModel;
+
 /**
  * Uniform accessor for extension
  * 扩展的统一访问器，dubbo框架参考Java SPI定义了一套自己的SPI功能，这里就是对各种扩展类（能力）进行统一管理访问的接口
  */
 public interface ExtensionAccessor {
 
+    /**
+     * 定义的获取方法，由每个实现类去设置值。这里实现类包含：
+     * ScopeModel（FrameworkModel、ApplicationModel、ModulModel）、ExtensionDirector，括号
+     * 中的三个域对象在执行构造函数的时候，有调用了父类ScopeModel的初始化方法，完成了ExtensionDirector
+     * 的构造初始化。
+     * <p>
+     * 三大域对象在调用的时候，其实就是用父类{@link ScopeModel#getExtensionDirector()}获取ExtensionLoader
+     *
+     * @return
+     */
     ExtensionDirector getExtensionDirector();
 
     /**

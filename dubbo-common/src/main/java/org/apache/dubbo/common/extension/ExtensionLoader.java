@@ -29,6 +29,7 @@ import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.resource.Disposable;
 import org.apache.dubbo.common.utils.*;
+import org.apache.dubbo.metadata.definition.TypeDefinitionBuilder;
 import org.apache.dubbo.rpc.model.*;
 
 import java.io.BufferedReader;
@@ -112,6 +113,10 @@ public class ExtensionLoader<T> {
 
     private static final Map<String, String> specialSPILoadingStrategyMap = getSpecialSPILoadingStrategyMap();
 
+    /**
+     * Map<java.net.URL, List<String>> 作用
+     * TODO 为什么用到软引用，垃圾回收？
+     */
     private static SoftReference<Map<java.net.URL, List<String>>> urlListMapCache = new SoftReference<>(
         new ConcurrentHashMap<>());
 
@@ -1000,17 +1005,27 @@ public class ExtensionLoader<T> {
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
 
-        // 使用Java SPI加载扩展配置文件读取策略
+        // 使用Java ServiceLoader（Java SPI）加载扩展配置文件读取策略
+        // LoadingStrategy实现类，从不同目录加载
         for (LoadingStrategy strategy : strategies) {
             loadDirectory(extensionClasses, strategy, type.getName());
 
             // compatible with old ExtensionFactory
+            // 兼容
             if (this.type == ExtensionInjector.class) {
                 loadDirectory(extensionClasses, strategy, ExtensionFactory.class.getName());
             }
         }
 
         return extensionClasses;
+    }
+
+    public static void main(String[] args) {
+
+        Class<TypeDefinitionBuilder> typeDefinitionBuilderClass = TypeDefinitionBuilder.class;
+
+        System.out.println(typeDefinitionBuilderClass.getName());
+
     }
 
     /**
@@ -1044,6 +1059,12 @@ public class ExtensionLoader<T> {
 
     /**
      * extract and cache default extension name if exists
+     * <p>
+     * 扩展类型名称{@link SPI#value()}，示例：
+     * javassist
+     * isolation
+     * metadata
+     * accesskey
      */
     private void cacheDefaultExtensionName() {
         // 检查是否SPI注解
@@ -1067,7 +1088,6 @@ public class ExtensionLoader<T> {
     }
 
     /**
-     *
      * @param extensionClasses
      * @param loadingStrategy
      * @param type
@@ -1079,6 +1099,7 @@ public class ExtensionLoader<T> {
         // 路径 + 扩展类名称，示例：META-INF/dubbo/org.apache.dubbo.metadata.definition.builder.TypeBuilder
         String fileName = loadingStrategy.directory() + type;
         try {
+            // 声明用于加载类的类加载器列表
             List<ClassLoader> classLoadersToLoad = new LinkedList<>();
 
             // try to load from ExtensionLoader's ClassLoader first
@@ -1086,7 +1107,7 @@ public class ExtensionLoader<T> {
             if (loadingStrategy.preferExtensionClassLoader()) {
                 ClassLoader extensionLoaderClassLoader = ExtensionLoader.class.getClassLoader();
                 if (ClassLoader.getSystemClassLoader() != extensionLoaderClassLoader) {
-                    // 非系统类加载，放入列表，用于之后类加载
+                    // 非系统类加载，放入类加载器列表，用于之后类加载
                     classLoadersToLoad.add(extensionLoaderClassLoader);
                 }
             }
@@ -1094,7 +1115,7 @@ public class ExtensionLoader<T> {
             if (specialSPILoadingStrategyMap.containsKey(type)) {
                 // 跳过只有dubbo框架实现的特定SPI，减少资源扫描，加快启动
                 String internalDirectoryType = specialSPILoadingStrategyMap.get(type);
-                //skip to load spi when name don't match
+                // skip to load spi when name don't match
                 if (!LoadingStrategy.ALL.equals(
                     internalDirectoryType) && !internalDirectoryType.equals(
                     loadingStrategy.getName())) {
@@ -1105,15 +1126,16 @@ public class ExtensionLoader<T> {
             } else {
                 // 处理普通的扩展类
                 // load from scope model
-                // 在ExtensionLoader构造函数赋值scopeModel（就是对应的FrameworkModel、ApplicationModel、ModuleModel）
-                // 这里的classLoaders是在调用各域对象调用父类initialize方法后，设置的classLoaders
+                // 在ExtensionLoader构造函数赋值的scopeModel（就是对应的FrameworkModel、ApplicationModel、ModuleModel）
+                // 这里的classLoaders是各个各作用域对象调用父类initialize方法后，设置的classLoaders
                 Set<ClassLoader> classLoaders = scopeModel.getClassLoaders();
 
                 if (CollectionUtils.isEmpty(classLoaders)) {
-                    // 如果加载域对象的类加载器为空，则直接加载文件，获取扩展类信息资源，之后再加载类信息
+                    // 如果加载域对象的类加载器为空，则直接加载文件，获取扩展类信息统一资源定位符，之后再加载类信息
                     Enumeration<java.net.URL> resources = ClassLoader.getSystemResources(fileName);
                     if (resources != null) {
                         while (resources.hasMoreElements()) {
+                            // 从统一资源定位符加载类信息
                             loadResource(extensionClasses, null, resources.nextElement(),
                                 loadingStrategy.overridden(), loadingStrategy.includedPackages(),
                                 loadingStrategy.excludedPackages(),
@@ -1125,10 +1147,11 @@ public class ExtensionLoader<T> {
                 }
             }
 
-            // 否则还是从收集的类加载器，加载类信息
+            // 还是从收集的类加载器加载类信息
             Map<ClassLoader, Set<java.net.URL>> resources = ClassLoaderResourceLoader.loadResources(
                 fileName, classLoadersToLoad);
             resources.forEach(((classLoader, urls) -> {
+                // 从类加载器加载类信息
                 loadFromClass(extensionClasses, loadingStrategy.overridden(), urls, classLoader,
                     loadingStrategy.includedPackages(), loadingStrategy.excludedPackages(),
                     loadingStrategy.onlyExtensionClassLoaderPackages());
@@ -1166,9 +1189,12 @@ public class ExtensionLoader<T> {
                     String name = null;
                     int i = line.indexOf('=');
                     if (i > 0) {
+                        // 等号前：定义名称
                         name = line.substring(0, i).trim();
+                        // 等号后：类全限定名
                         clazz = line.substring(i + 1).trim();
                     } else {
+                        // org.apache.dubbo.common.extension.DubboLoadingStrategy
                         clazz = line;
                     }
                     if (StringUtils.isNotEmpty(clazz) && !isExcluded(clazz,
@@ -1177,6 +1203,7 @@ public class ExtensionLoader<T> {
                         onlyExtensionClassLoaderPackages)) {
 
                         loadClass(classLoader, extensionClasses, resourceURL,
+                            // 这里已经生成类信息，loadClass为了做激活检查并将各种信息作缓存
                             Class.forName(clazz, true, classLoader), name, overridden);
                     }
                 } catch (Throwable t) {
@@ -1193,7 +1220,20 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获取资源内容，
+     * 示例：dubbo-common包下resources/META-INF/service/org.apache.dubbo.common.extension.LoadingStrategy，定义了《三行》扩展加载策略
+     *
+     * @param resourceURL dubbo-common包下resources/META-INF/service/org.apache.dubbo.common.extension.LoadingStrategy
+     * @return [
+     *          'org.apache.dubbo.common.extension.DubboInternalLoadingStrategy',
+     *          'org.apache.dubbo.common.extension.DubboLoadingStrategy',
+     *          'org.apache.dubbo.common.extension.ServicesLoadingStrategy'
+     *         ]
+     * @throws IOException
+     */
     private List<String> getResourceContent(java.net.URL resourceURL) throws IOException {
+        // 没有就创建
         Map<java.net.URL, List<String>> urlListMap = urlListMapCache.get();
         if (urlListMap == null) {
             synchronized (ExtensionLoader.class) {
@@ -1270,20 +1310,23 @@ public class ExtensionLoader<T> {
     private void loadClass(ClassLoader classLoader, Map<String, Class<?>> extensionClasses,
                            java.net.URL resourceURL, Class<?> clazz, String name,
                            boolean overridden) {
+        // 检查是否扩展类型的实现类
         if (!type.isAssignableFrom(clazz)) {
             throw new IllegalStateException(
                 "Error occurred when loading extension class (interface: " + type + ", class line: " + clazz.getName() + "), class " + clazz.getName() + " is not subtype of interface.");
         }
 
+        // 检查扩展类是否被激活
         boolean isActive = loadClassIfActive(classLoader, clazz);
-
         if (!isActive) {
             return;
         }
 
         if (clazz.isAnnotationPresent(Adaptive.class)) {
+            // 缓存适配类型（做依赖注入）
             cacheAdaptiveClass(clazz, overridden);
         } else if (isWrapperClass(clazz)) {
+            // 缓存包装类型（）
             cacheWrapperClass(clazz);
         } else {
             if (StringUtils.isEmpty(name)) {
@@ -1296,23 +1339,34 @@ public class ExtensionLoader<T> {
 
             String[] names = NAME_SEPARATOR.split(name);
             if (ArrayUtils.isNotEmpty(names)) {
+                // 缓存激活类型
                 cacheActivateClass(clazz, names[0]);
                 for (String n : names) {
                     cacheName(clazz, n);
+                    // 将类信息放入映射
                     saveInExtensionClass(extensionClasses, clazz, n, overridden);
                 }
             }
         }
     }
 
+    /**
+     * 检查扩展类是否激活
+     *
+     * @param classLoader 扩展类加载器
+     * @param clazz       扩展类
+     * @return true: 激活 false: 未激活
+     */
     private boolean loadClassIfActive(ClassLoader classLoader, Class<?> clazz) {
+        // 检查扩展类是否激活
         Activate activate = clazz.getAnnotation(Activate.class);
-
         if (activate == null) {
+            // 没有该注解，则认为该扩展类是激活的
             return true;
         }
-        String[] onClass = null;
 
+        // 获取激活条件
+        String[] onClass = null;
         if (activate instanceof Activate) {
             onClass = ((Activate) activate).onClass();
         } else if (Dubbo2CompactUtils.isEnabled() && Dubbo2ActivateUtils.isActivateLoaded()
@@ -1321,11 +1375,14 @@ public class ExtensionLoader<T> {
         }
 
         boolean isActive = true;
-
         if (null != onClass && onClass.length > 0) {
+            // 如果激活条件不满足，则认为该扩展类是未激活的
+            // 这里个onClass指定的所有类，在类加载器中存在，才认为扩展类是激活的
+            // TODO 目的是控制类加载，但为什么要这么做
             isActive = Arrays.stream(onClass).filter(StringUtils::isNotBlank)
                 .allMatch(className -> ClassUtils.isPresent(className, classLoader));
         }
+
         return isActive;
     }
 

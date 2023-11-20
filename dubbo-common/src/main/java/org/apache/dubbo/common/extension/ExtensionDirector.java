@@ -26,30 +26,42 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ExtensionDirector is a scoped extension loader manager.
+ * 作用域扩展加载程序<管理器>
  *
  * <p></p>
  * <p>ExtensionDirector supports multiple levels, and the child can inherit the parent's extension instances. </p>
  * <p>The way to find and create an extension instance is similar to Java classloader.</p>
- * <p>
- * <p>
- * 作用域扩展加载程序管理器
+ *
  * <p>
  * 相对独立的类：用来管理扩展加载类、扩展域类
  */
 public class ExtensionDirector implements ExtensionAccessor {
 
+    /**
+     * 很显然一个ExtensionDirection管理多个ExtensionLoader，而每个ExtensionLoader又负责一个扩展类型
+     */
     private final ConcurrentMap<Class<?>, ExtensionLoader<?>> extensionLoadersMap = new ConcurrentHashMap<>(64);
+
+    /**
+     * 每个扩展类型支持的域范围
+     */
     private final ConcurrentMap<Class<?>, ExtensionScope> extensionScopeMap = new ConcurrentHashMap<>(64);
+
+    /**
+     * 该类支持父子继承，子类可以继承父类的扩展加载实例
+     */
     private final ExtensionDirector parent;
 
     /**
-     * 扩展支持的域模型类型（我理解有很多扩展，无论框架自带或用户自建，每个扩展都有支持的域级别，
+     * 扩展支持的域模型类型（我理解有很多扩展，无论框架自带或用户自建，每个扩展都有支持的作用域级别，
      * 如框架级别-FrameworkModel、应用级别-ApplicationModel、模块级别-ModuleNodel）
      * 扩展配置的域只有和当前匹配了，才可以使用
      */
     private final ExtensionScope scope;
 
-    // 在扩展初始化之前或之后调用的的《后处理器》
+    /**
+     * 在扩展初始化之前或之后调用的的《前后置处理器》
+     */
     private final List<ExtensionPostProcessor> extensionPostProcessors = new ArrayList<>();
     private final ScopeModel scopeModel;
     private final AtomicBoolean destroyed = new AtomicBoolean();

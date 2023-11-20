@@ -40,6 +40,7 @@ public class TypeDefinitionBuilder {
     public static List<TypeBuilder> BUILDERS;
 
     public static void initBuilders(FrameworkModel model) {
+        // 使用SPI扩展机制加载所有类型定义构造器
         Set<TypeBuilder> tbs = model.getExtensionLoader(TypeBuilder.class).getSupportedExtensionInstances();
         BUILDERS = new ArrayList<>(tbs);
     }
