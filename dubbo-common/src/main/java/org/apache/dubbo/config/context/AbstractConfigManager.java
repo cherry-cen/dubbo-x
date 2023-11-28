@@ -72,7 +72,11 @@ public abstract class AbstractConfigManager extends LifecycleAdapter {
     private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(AbstractConfigManager.class);
     private static final Set<Class<? extends AbstractConfig>> uniqueConfigTypes = new ConcurrentHashSet<>();
 
-    final Map<String, Map<String, AbstractConfig>> configsCache = new ConcurrentHashMap<>();
+    /**
+     * 配置管理
+     */
+    final Map<String/*配置类名称（按照一定规则生成）*/, Map<String/*配置唯一标识key（按照一定规则生成）*/, AbstractConfig/*配置类*/>> configsCache
+        = new ConcurrentHashMap<>();
 
     private final Map<String, AtomicInteger> configIdIndexes = new ConcurrentHashMap<>();
 
@@ -150,18 +154,24 @@ public abstract class AbstractConfigManager extends LifecycleAdapter {
         if (config == null) {
             return null;
         }
+
         // ignore MethodConfig
+        // 检查当前配置管理器支持的配置对象类型
         if (!isSupportConfigType(config.getClass())) {
             throw new IllegalArgumentException("Unsupported config type: " + config);
         }
 
+        // 更新配置对象域模型
         if (config.getScopeModel() != scopeModel) {
             config.setScopeModel(scopeModel);
         }
 
+        // 获取缓存信息
         Map<String, AbstractConfig> configsMap = configsCache.computeIfAbsent(getTagName(config.getClass()), type -> new ConcurrentHashMap<>());
 
         // fast check duplicated equivalent config before write lock
+        // 在写锁之前，检查非服务级别配置是否存在缓存，存在则直接返回
+        // TODO 为什么要过滤这俩配置
         if (!(config instanceof ReferenceConfigBase || config instanceof ServiceConfigBase)) {
             for (AbstractConfig value : configsMap.values()) {
                 if (value.equals(config)) {
@@ -171,6 +181,7 @@ public abstract class AbstractConfigManager extends LifecycleAdapter {
         }
 
         // lock by config type
+        // 同步添加配置
         synchronized (configsMap) {
             return (T) addIfAbsent(config, configsMap);
         }
@@ -196,6 +207,7 @@ public abstract class AbstractConfigManager extends LifecycleAdapter {
     private <C extends AbstractConfig> C addIfAbsent(C config, Map<String, C> configsMap)
             throws IllegalStateException {
 
+        // 配置为空直接返回
         if (config == null || configsMap == null) {
             return config;
         }

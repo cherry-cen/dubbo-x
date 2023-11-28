@@ -29,6 +29,11 @@ import java.util.stream.Collectors;
 
 /**
  * AdaptiveExtensionInjector
+ *
+ *
+ * 自适应扩展注入器。初始化对象时，会从扩展加载类ExtensionLoader种获取扩展注入类型。注意这里也不知道是哪个扩展类型，
+ * 可能是SpringExtensionInjector、SpiExtensionInjector、ScopeBeanExtensionInjector种任意一个。这个对象
+ * 就是做个自动适配，从响应的扩展类型注入器中获取扩展类信息。起到自适应、适配器作用
  */
 @Adaptive
 public class AdaptiveExtensionInjector implements ExtensionInjector, Lifecycle {

@@ -65,8 +65,11 @@ public class InstantiationStrategy {
 
         // 2. use matched constructor if found
         List<Constructor<?>> matchedConstructors = new ArrayList<>();
+        // 获取所有的构造器函数
         Constructor<?>[] declaredConstructors = type.getConstructors();
         for (Constructor<?> constructor : declaredConstructors) {
+            // 遍历构造器，判断构造器的入参类型是否ScopeModel类型，
+            // 说明我们扩展类型在这个版本如果想要让这个构造器生效必须参数类型为ScopeMode
             if (isMatched(constructor)) {
                 matchedConstructors.add(constructor);
             }

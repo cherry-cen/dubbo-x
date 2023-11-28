@@ -43,8 +43,13 @@ public class Application {
 
         // 获取dubbo启动引导实例
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
-        bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
+        bootstrap
+            // 在启动前需要初始化一些配置信息
+            // 初始化应用配置
+            .application(new ApplicationConfig("dubbo-demo-api-provider"))
+            // 初始化注册中心配置
             .registry(new RegistryConfig(REGISTRY_URL))
+            // 初始化协议配置
             .protocol(new ProtocolConfig(CommonConstants.DUBBO, -1))
             .service(service)
             // 核心这里：启动流程，了解dubbo服务如何注册、暴漏

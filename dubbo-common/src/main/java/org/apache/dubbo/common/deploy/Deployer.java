@@ -20,6 +20,11 @@ import org.apache.dubbo.rpc.model.ScopeModel;
 
 import java.util.concurrent.Future;
 
+/**
+ * 发布器，定义了许多生命周期相关方法
+ *
+ * @param <E>
+ */
 public interface Deployer<E extends ScopeModel> {
 
     /**
@@ -29,6 +34,7 @@ public interface Deployer<E extends ScopeModel> {
 
     /**
      * Starts the component.
+     *
      * @return
      */
     Future start() throws IllegalStateException;

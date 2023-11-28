@@ -197,11 +197,12 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
     }
 
     /**
-     * Initialize
+     * Initialize，要知道初始化了什么内容
      */
     @Override
     public void initialize() {
         if (initialized) {
+            // 已初始化，直接返回
             return;
         }
         // Ensure that the initialization is completed when concurrent calls
@@ -209,25 +210,37 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
             if (initialized) {
                 return;
             }
+
+            // 发布应用启动事件
             onInitialize();
 
             // register shutdown hook
+            // 注册关闭钩子，
+            // 这个逻辑基本每个中间件应用都必须要要做的事情了，正常关闭应用回收资源，一般没这个逻辑情况下容易出现
+            // 一些异常，让我们开发人员很疑惑，而这个逻辑往往并不好处理的干净。
             registerShutdownHook();
 
+            // 启动配置中心
             startConfigCenter();
 
+            // 加载应用相关配置，如：应用配置、注册配置、监控配置、协议配置等，就是我们在xml、yaml等配置的内容
+            // 配置来源：环境变量、JVM启动参数、配置文字等几个来源
             loadApplicationConfigs();
 
+            // 初始化模块发布器（发布服务提供和服务引用使用，是不是doStart执行的时候使用）
             initModuleDeployers();
 
-
+            // 初始化监控上报
             initMetricsReporter();
 
+            // 初始化监控服务
             initMetricsService();
 
             // @since 2.7.8
+            // 启动元数据中心
             startMetadataCenter();
 
+            // 设置初始化状态
             initialized = true;
 
             if (logger.isInfoEnabled()) {
@@ -634,12 +647,14 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
     @Override
     public Future start() {
         synchronized (startLock) {
+            // 检查发布器状态，
             if (isStopping() || isStopped() || isFailed()) {
                 throw new IllegalStateException(getIdentifier() + " is stopping or stopped, can not start again");
             }
 
             try {
                 // maybe call start again after add new module, check if any new module
+                // 检查是否在应用模型下，是否有新增的模块（可能添加新模块后再次调用start）
                 boolean hasPendingModule = hasPendingModule();
 
                 if (isStarting()) {
@@ -659,10 +674,14 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
 
                 // pending -> starting : first start app
                 // started -> starting : re-start app
+
+                // 启动状态切换，将启动状态切换到STARTING（pending和started状态无需切换）
                 onStarting();
 
+                // 核心初始化逻辑，主要做一些应用级别启动如配置中心、元数据中心启动
                 initialize();
 
+                // 启动模块（服务提供、服务引用是这个模块级别完成的）
                 doStart();
             } catch (Throwable e) {
                 onFailed(getIdentifier() + " start failure", e);
@@ -690,6 +709,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
     }
 
     private void doStart() {
+        // 启动模块
         startModules();
 
         // prepare application instance
@@ -721,11 +741,14 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
 
     private void startModules() {
         // ensure init and start internal module first
+        // 确保初始化并首先启动内部模块
+        // TODO  没懂 Dubbo3中将模块分为内部和外部，内部是核心代码已经提供的一些服务比如元数据服务，外部是我们自己写的服务
         prepareInternalModule();
 
         // filter and start pending modules, ignore new module during starting, throw exception of module start
         for (ModuleModel moduleModel : applicationModel.getModuleModels()) {
             if (moduleModel.getDeployer().isPending()) {
+                // 模块启动
                 moduleModel.getDeployer().start();
             }
         }

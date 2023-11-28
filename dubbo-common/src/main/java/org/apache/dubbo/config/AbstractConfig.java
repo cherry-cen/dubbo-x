@@ -36,10 +36,12 @@ import org.apache.dubbo.config.context.ConfigManager;
 import org.apache.dubbo.config.context.ConfigMode;
 import org.apache.dubbo.config.support.Nested;
 import org.apache.dubbo.config.support.Parameter;
+import org.apache.dubbo.metadata.definition.builder.TypeBuilder;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.model.ModuleModel;
 import org.apache.dubbo.rpc.model.ScopeModel;
 import org.apache.dubbo.rpc.model.ScopeModelUtil;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -135,6 +137,8 @@ public abstract class AbstractConfig implements Serializable {
 
     public static String getTagName(Class<?> cls) {
         return ConcurrentHashMapUtils.computeIfAbsent(tagNameCache, cls, (key) -> {
+            // 对于当前类：AbstractConfig
+            // simpleName：AbstractConfig，name：org.apache.dubbo.config.AbstractConfig
             String tag = cls.getSimpleName();
             for (String suffix : SUFFIXES) {
                 if (tag.endsWith(suffix)) {

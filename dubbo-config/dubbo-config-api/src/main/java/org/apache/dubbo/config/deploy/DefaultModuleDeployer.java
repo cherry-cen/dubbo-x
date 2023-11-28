@@ -117,8 +117,10 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
             if (initialized) {
                 return;
             }
+
             onInitialize();
 
+            // 加载模块配置
             loadConfigs();
 
             // read ModuleConfig
@@ -150,20 +152,24 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
 
     private synchronized Future startSync() throws IllegalStateException {
         if (isStopping() || isStopped() || isFailed()) {
+            // 做状态检查，模块发布器正停止、已停止、启动失败，直接抛异常
             throw new IllegalStateException(getIdentifier() + " is stopping or stopped, can not start again");
         }
 
         try {
             if (isStarting() || isStarted()) {
+                // 启动中、已启动，直接返回
                 return startFuture;
             }
 
+            // 切换模块启动状态
             onModuleStarting();
 
-
+            // 初始化
             initialize();
 
             // export services
+            // 暴露服务
             exportServices();
 
             // prepare application instance
@@ -173,33 +179,43 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
             }
 
             // refer services
+            // 引用服务
             referServices();
 
             // if no async export/refer services, just set started
+            // 如果非异步发布或引用服务，直接切换状态为STARTED
             if (asyncExportingFutures.isEmpty() && asyncReferringFutures.isEmpty()) {
                 // publish module started event
+                // 发布模块启动事件
                 onModuleStarted();
 
                 // register services to registry
+                // 注册服务到注册中心？
                 registerServices();
 
                 // check reference config
+                //
                 checkReferences();
 
                 // complete module start future after application state changed
                 completeStartFuture(true);
             } else {
+                // 异步提交到线程池执行
                 frameworkExecutorRepository.getSharedExecutor().submit(() -> {
                     try {
                         // wait for export finish
+                        // 等待服务发布完成
                         waitExportFinish();
                         // wait for refer finish
+                        // 等待服务引用完成
                         waitReferFinish();
 
                         // publish module started event
+                        // 发布模块启动事件
                         onModuleStarted();
 
                         // register services to registry
+                        // 注册服务到注册中心
                         registerServices();
 
                         // check reference config
@@ -209,6 +225,7 @@ public class DefaultModuleDeployer extends AbstractDeployer<ModuleModel> impleme
                         onModuleFailed(getIdentifier() + " start failed: " + e, e);
                     } finally {
                         // complete module start future after application state changed
+                        // 异步回调完成 所有服务都启动了，再切换状态
                         completeStartFuture(true);
                     }
                 });
